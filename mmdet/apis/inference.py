@@ -26,10 +26,16 @@ def init_detector(config, checkpoint=None, device='cuda:0'):
         nn.Module: The constructed detector.
     """
     if isinstance(config, str):
+
+        from IPython import embed
+
+        # embed()
+
         config = mmcv.Config.fromfile(config)
     elif not isinstance(config, mmcv.Config):
-        raise TypeError('config must be a filename or Config object, '
-                        f'but got {type(config)}')
+        raise TypeError(
+            'config must be a filename or Config object, ' f'but got {type(config)}'
+        )
     config.model.pretrained = None
     model = build_detector(config.model, test_cfg=config.test_cfg)
     if checkpoint is not None:
@@ -39,8 +45,10 @@ def init_detector(config, checkpoint=None, device='cuda:0'):
             model.CLASSES = checkpoint['meta']['CLASSES']
         else:
             warnings.simplefilter('once')
-            warnings.warn('Class names are not saved in the checkpoint\'s '
-                          'meta data, use COCO classes by default.')
+            warnings.warn(
+                'Class names are not saved in the checkpoint\'s '
+                'meta data, use COCO classes by default.'
+            )
             model.CLASSES = get_classes('coco')
     model.cfg = config  # save the config in the model for convenience
     model.to(device)
@@ -168,3 +176,26 @@ def show_result_pyplot(model, img, result, score_thr=0.3, fig_size=(15, 10)):
     plt.figure(figsize=fig_size)
     plt.imshow(mmcv.bgr2rgb(img))
     plt.show()
+
+
+def return_show_result_pyplot_result(
+    model, img, result, score_thr=0.3, fig_size=(15, 10)
+):
+    """Visualize the detection results on the image.
+
+    Args:
+        model (nn.Module): The loaded detector.
+        img (str or np.ndarray): Image filename or loaded image.
+        result (tuple[list] or list): The detection result, can be either
+            (bbox, segm) or just bbox.
+        score_thr (float): The threshold to visualize the bboxes and masks.
+        fig_size (tuple): Figure size of the pyplot figure.
+    
+    Returns
+
+    img: BGR
+    """
+    if hasattr(model, 'module'):
+        model = model.module
+    img = model.show_result(img, result, score_thr=score_thr, show=False)
+    return img

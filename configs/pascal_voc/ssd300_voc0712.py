@@ -1,11 +1,13 @@
 _base_ = [
-    '../_base_/models/ssd300.py', '../_base_/datasets/voc0712.py',
-    '../_base_/default_runtime.py'
+    '../_base_/models/ssd300.py',
+    '../_base_/datasets/voc0712.py',
+    '../_base_/default_runtime.py',
 ]
 model = dict(
     bbox_head=dict(
-        num_classes=20, anchor_generator=dict(basesize_ratio_range=(0.2,
-                                                                    0.9))))
+        num_classes=13, anchor_generator=dict(basesize_ratio_range=(0.2, 0.9))
+    )
+)
 # dataset settings
 dataset_type = 'VOCDataset'
 data_root = 'data/VOCdevkit/'
@@ -18,16 +20,17 @@ train_pipeline = [
         brightness_delta=32,
         contrast_range=(0.5, 1.5),
         saturation_range=(0.5, 1.5),
-        hue_delta=18),
+        hue_delta=18,
+    ),
     dict(
         type='Expand',
         mean=img_norm_cfg['mean'],
         to_rgb=img_norm_cfg['to_rgb'],
-        ratio_range=(1, 4)),
+        ratio_range=(1, 4),
+    ),
     dict(
-        type='MinIoURandomCrop',
-        min_ious=(0.1, 0.3, 0.5, 0.7, 0.9),
-        min_crop_size=0.3),
+        type='MinIoURandomCrop', min_ious=(0.1, 0.3, 0.5, 0.7, 0.9), min_crop_size=0.3
+    ),
     dict(type='Resize', img_scale=(300, 300), keep_ratio=False),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='RandomFlip', flip_ratio=0.5),
@@ -45,25 +48,46 @@ test_pipeline = [
             dict(type='Normalize', **img_norm_cfg),
             dict(type='ImageToTensor', keys=['img']),
             dict(type='Collect', keys=['img']),
-        ])
+        ],
+    ),
 ]
 data = dict(
     samples_per_gpu=8,
     workers_per_gpu=3,
-    train=dict(
-        type='RepeatDataset', times=10, dataset=dict(pipeline=train_pipeline)),
+    train=dict(type='RepeatDataset', times=10, dataset=dict(pipeline=train_pipeline)),
     val=dict(pipeline=test_pipeline),
-    test=dict(pipeline=test_pipeline))
+    test=dict(pipeline=test_pipeline),
+)
 # optimizer
-optimizer = dict(type='SGD', lr=1e-3, momentum=0.9, weight_decay=5e-4)
-optimizer_config = dict()
+# optimizer = dict(type='SGD', lr=1e-3, momentum=0.9, weight_decay=5e-4)
+# optimizer_config = dict()
 # learning policy
+# lr_config = dict(
+#     policy='step', warmup='linear', warmup_iters=500, warmup_ratio=0.001, step=[16, 20]
+# )
+
+# Use Adam
+optimizer = dict(type='Adam', lr=0.00005)
+# Use Gradient Clipping
+optimizer_config = dict(grad_clip=dict(max_norm=25, norm_type=2))
+# # learning policy
 lr_config = dict(
-    policy='step',
-    warmup='linear',
-    warmup_iters=500,
-    warmup_ratio=0.001,
-    step=[16, 20])
-checkpoint_config = dict(interval=1)
+    policy='step', warmup='linear', warmup_iters=500, warmup_ratio=1.0 / 3, step=[180]
+)
+
+# # optimizer
+# optimizer = dict(type='Adam', lr=0.0005)
+# optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
+# # learning policy
+# lr_config = dict(
+#     policy='step',
+#     warmup='linear',
+#     warmup_iters=500,
+#     warmup_ratio=1.0 / 3,
+#     step=[180])
+
+checkpoint_config = dict(interval=1)  # Save every 1 epoch
 # runtime settings
-total_epochs = 24
+total_epochs = 8  # 24
+# Load from previous file
+# load_from = "/home/chekun/vision/mmdetection/demo/work_dirs/ssd300_voc0712/epoch_8.pth"

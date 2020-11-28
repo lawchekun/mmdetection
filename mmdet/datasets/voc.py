@@ -6,10 +6,37 @@ from .xml_style import XMLDataset
 @DATASETS.register_module()
 class VOCDataset(XMLDataset):
 
-    CLASSES = ('aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car',
-               'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse',
-               'motorbike', 'person', 'pottedplant', 'sheep', 'sofa', 'train',
-               'tvmonitor')
+    # CLASSES = ('bio', 'rov')
+
+    # CLASSES = (
+    #     'bin',
+    #     'bin_cover',
+    #     'buoy_green',
+    #     'buoy_red',
+    #     'buoy_yellow',
+    #     'channel',
+    #     'object_dropoff',
+    #     'object_pickup',
+    #     'qual_gate',
+    #     'torpedo_cover',
+    #     'torpedo_hole',
+    #     'torpedo_target',
+    # )
+
+    CLASSES = (
+        'bio',
+        'cloth',
+        'fishing',
+        'metal',
+        'paper',
+        'papper',
+        'plastic',
+        'rov',
+        'rubber',
+        'timestamp',
+        'unknown',
+        'wood',
+    )
 
     def __init__(self, **kwargs):
         super(VOCDataset, self).__init__(**kwargs)
@@ -20,13 +47,15 @@ class VOCDataset(XMLDataset):
         else:
             raise ValueError('Cannot infer dataset year from img_prefix')
 
-    def evaluate(self,
-                 results,
-                 metric='mAP',
-                 logger=None,
-                 proposal_nums=(100, 300, 1000),
-                 iou_thr=0.5,
-                 scale_ranges=None):
+    def evaluate(
+        self,
+        results,
+        metric='mAP',
+        logger=None,
+        proposal_nums=(100, 300, 1000),
+        iou_thr=0.5,
+        scale_ranges=None,
+    ):
         """Evaluate in VOC protocol.
 
         Args:
@@ -69,14 +98,16 @@ class VOCDataset(XMLDataset):
                 scale_ranges=None,
                 iou_thr=iou_thr,
                 dataset=ds_name,
-                logger=logger)
+                logger=logger,
+            )
             eval_results['mAP'] = mean_ap
         elif metric == 'recall':
             gt_bboxes = [ann['bboxes'] for ann in annotations]
             if isinstance(iou_thr, float):
                 iou_thr = [iou_thr]
             recalls = eval_recalls(
-                gt_bboxes, results, proposal_nums, iou_thr, logger=logger)
+                gt_bboxes, results, proposal_nums, iou_thr, logger=logger
+            )
             for i, num in enumerate(proposal_nums):
                 for j, iou in enumerate(iou_thr):
                     eval_results[f'recall@{num}@{iou}'] = recalls[i, j]
